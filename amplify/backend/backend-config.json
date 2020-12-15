@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "duckeydiceampui66fc386d": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false
+    }
+  }
+}
