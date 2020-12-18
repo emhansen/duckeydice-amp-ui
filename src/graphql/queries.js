@@ -1,30 +1,34 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const getNote = /* GraphQL */ `
-  query GetNote($id: ID!) {
-    getNote(id: $id) {
+export const getDuckyDiceGame = /* GraphQL */ `
+  query GetDuckyDiceGame($id: ID!) {
+    getDuckyDiceGame(id: $id) {
+      gameName
+      gameState
       id
-      name
-      description
-      createdAt
-      updatedAt
+      maxDice
+      pot
+      rounds
+      users
     }
   }
 `;
-export const listNotes = /* GraphQL */ `
-  query ListNotes(
-    $filter: ModelNoteFilterInput
+export const listDuckyDiceGames = /* GraphQL */ `
+  query ListDuckyDiceGames(
+    $filter: TableDuckyDiceGameFilterInput
     $limit: Int
     $nextToken: String
   ) {
-    listNotes(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    listDuckyDiceGames(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
+        gameName
+        gameState
         id
-        name
-        description
-        createdAt
-        updatedAt
+        maxDice
+        pot
+        rounds
+        users
       }
       nextToken
     }
