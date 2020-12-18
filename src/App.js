@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { API } from 'aws-amplify';
+import { Auth, API, PubSub } from 'aws-amplify';
 import { withAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react';
 import { listNotes } from './graphql/queries';
 import { createNote as createNoteMutation, deleteNote as deleteNoteMutation } from './graphql/mutations';
@@ -11,6 +11,11 @@ function App() {
   const [notes, setNotes] = useState([]);
   const [formData, setFormData] = useState(initialFormState);
 
+  Auth.currentCredentials().then((info) => {
+    const cognitoIdentityId = info;
+    console.log(cognitoIdentityId);
+  });
+
   useEffect(() => {
     fetchNotes();
   }, []);
@@ -20,9 +25,19 @@ function App() {
     setNotes(apiData.data.listNotes.items);
   }
 
+  PubSub.subscribe('duckydiceupdates').subscribe({
+    next: data => fetchNotes(),
+    error: error => console.error(error),
+    close: () => console.log('Done'),
+  });
+
   async function createNote() {
     if (!formData.name || !formData.description) return;
-    await API.graphql({ query: createNoteMutation, variables: { input: formData } });
+    await Promise.all([
+      API.graphql({ query: createNoteMutation, variables: { input: formData } }),
+      PubSub.publish('duckydiceupdates', { msg: 'Hello to all subscribers!' })
+    ]);
+    
     setNotes([ ...notes, formData ]);
     setFormData(initialFormState);
   }
@@ -30,7 +45,10 @@ function App() {
   async function deleteNote({ id }) {
     const newNotesArray = notes.filter(note => note.id !== id);
     setNotes(newNotesArray);
-    await API.graphql({ query: deleteNoteMutation, variables: { input: { id } }});
+    await Promise.all([
+      API.graphql({ query: deleteNoteMutation, variables: { input: { id } }}),
+      PubSub.publish('duckydiceupdates', { msg: 'Hello to all subscribers!' })
+    ]);
   }
 
   return (
