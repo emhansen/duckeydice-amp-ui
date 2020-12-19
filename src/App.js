@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { Auth, API, PubSub } from 'aws-amplify';
+import { v4 as uuidv4 } from 'uuid';
+import { Auth, API, graphqlOperation } from 'aws-amplify';
 import { withAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react';
-import { listNotes } from './graphql/queries';
-import { createNote as createNoteMutation, deleteNote as deleteNoteMutation } from './graphql/mutations';
+import { getDuckyDiceGame as getGame} from './graphql/queries';
+import { createDuckyDiceGame as createGame, updateDuckyDiceGame as updateGame} from './graphql/mutations';
 
-const initialFormState = { name: '', description: '' }
+const initialGame = { id: uuidv4(), gameName: '', gameState: 'INIT', maxDice: 5, pot: 0, rounds: [], users: [] }
 
 function App() {
-  const [notes, setNotes] = useState([]);
-  const [formData, setFormData] = useState(initialFormState);
+  const [game, setGame] = useState(initialGame);
+  const [formData, setFormData] = useState([]);
 
   Auth.currentCredentials().then((info) => {
     const cognitoIdentityId = info;
@@ -17,63 +18,46 @@ function App() {
   });
 
   useEffect(() => {
-    fetchNotes();
+    fetchCurrentGame();
   }, []);
 
-  async function fetchNotes() {
-    const apiData = await API.graphql({ query: listNotes });
-    setNotes(apiData.data.listNotes.items);
+  async function fetchCurrentGame() {
+    const apiData = await API.graphql(graphqlOperation(
+      getGame, 
+      { filter: {
+        or: [
+          { gameState: "INIT" },
+          { gameState: "IN_PROGRESS"}
+        ]
+      }}));
+    console.log("Retrieved Game: ",apiData);
   }
 
-  PubSub.subscribe('duckydiceupdates').subscribe({
-    next: data => fetchNotes(),
-    error: error => console.error(error),
-    close: () => console.log('Done'),
-  });
-
-  async function createNote() {
-    if (!formData.name || !formData.description) return;
-    await Promise.all([
-      API.graphql({ query: createNoteMutation, variables: { input: formData } }),
-      PubSub.publish('duckydiceupdates', { msg: 'Hello to all subscribers!' })
-    ]);
-    
-    setNotes([ ...notes, formData ]);
-    setFormData(initialFormState);
-  }
-
-  async function deleteNote({ id }) {
-    const newNotesArray = notes.filter(note => note.id !== id);
-    setNotes(newNotesArray);
-    await Promise.all([
-      API.graphql({ query: deleteNoteMutation, variables: { input: { id } }}),
-      PubSub.publish('duckydiceupdates', { msg: 'Hello to all subscribers!' })
-    ]);
+  async function createGame() {
+    if (!game.gameName || !game.id) return;
+    API.graphql(graphqlOperation(
+            createGame,
+            { input: game }))
+        .then(response => console.log(response))
+        .catch(err => console.log(err));
   }
 
   return (
     <div className="App">
-      <h1>My Notes App</h1>
+      <h1>Ducky Dice</h1>
       <input
-        onChange={e => setFormData({ ...formData, 'name': e.target.value})}
-        placeholder="Note name"
-        value={formData.name}
+        onChange={e => setGame(
+            { ...game, 'gameName': e.target.value }
+            )}
+        placeholder="Game Name"
+        value={game.name}
       />
-      <input
-        onChange={e => setFormData({ ...formData, 'description': e.target.value})}
-        placeholder="Note description"
-        value={formData.description}
-      />
-      <button onClick={createNote}>Create Note</button>
+      <button onClick={createGame}>Create Game</button>
       <div style={{marginBottom: 30}}>
         {
-          notes.map(note => (
-            <div key={note.id || note.name}>
-              <h2>{note.name}</h2>
-              <p>{note.description}</p>
-              <button onClick={() => deleteNote(note)}>Delete note</button>
+            <div key={game.id || game.name}>
+              <h2>{game.name}</h2>
             </div>
-          ))
         }
       </div>
       <AmplifySignOut />

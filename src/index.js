@@ -5,18 +5,9 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import Amplify from 'aws-amplify';
 import config from './aws-exports';
-import PubSub from '@aws-amplify/pubsub';
-import { AWSIoTProvider } from '@aws-amplify/pubsub';
-
 
 
 Amplify.configure(config);
-// Apply plugin with configuration
-Amplify.addPluggable(new AWSIoTProvider({
-     aws_pubsub_region: 'us-east-2',
-     aws_pubsub_endpoint: 'wss://a1gpigc1i2rxkh-ats.iot.us-east-2.amazonaws.com/mqtt',
-   }));
-PubSub.configure();
 
 ReactDOM.render(
   <React.StrictMode>
