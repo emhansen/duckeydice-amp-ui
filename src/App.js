@@ -33,13 +33,13 @@ function App() {
     console.log("Retrieved Game: ",apiData);
   }
 
-  async function createGame() {
+  async function createNewGame() {
     if (!game.gameName || !game.id) return;
     API.graphql(graphqlOperation(
             createGame,
             { input: game }))
-        .then(response => console.log(response))
-        .catch(err => console.log(err));
+        .then(response => console.log("receieved response after creating game: ",response))
+        .catch(err => console.log("problem creating game: ", err));
   }
 
   return (
@@ -52,7 +52,7 @@ function App() {
         placeholder="Game Name"
         value={game.name}
       />
-      <button onClick={createGame}>Create Game</button>
+      <button onClick={createNewGame}>Create Game</button>
       <div style={{marginBottom: 30}}>
         {
             <div key={game.id || game.name}>
